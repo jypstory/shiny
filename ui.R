@@ -1,130 +1,120 @@
-#install.packages(c('rvest','httr','KoNLP','stringr','tm','qgraph','xml2','dplyr','networkD3'))
+
+
+#install.packages("shinydashboard")
 library(shiny)
-library(shinythemes)
-library(DT)
-library(networkD3)
+library(shinydashboard)
 
-shinyUI(
-  navbarPage("My Shiny",
-             #theme = shinytheme("united"),
-             #shinythemes::themeSelector(),  
-             
-             ## Tab1 :: IRIS,  prefix - IRIS_
-             tabPanel("Iris Data Example",
-                      sidebarLayout(
-                        sidebarPanel(
-                          selectInput('IRIS_xcol', 'X Variable', names(iris)),
-                          selectInput('IRIS_ycol', 'Y Variable', names(iris),
-                                      selected=names(iris)[[2]]),
-                          numericInput('IRIS_clusters', 'Cluster count', 3,
-                                       min = 1, max = 9)
-                        ),
-                        mainPanel(
-                          plotOutput('IRIS_plot1')
-                        )
-                      )
-             ),
-             
-             ## Tab2 :: Data EDA,  prefix - EDA_
-             tabPanel("Data EDA",
-                      sidebarLayout(
-                        sidebarPanel(
-                          width = 3,
-                          # Input: Select a file ----
-                          fileInput("EDA_file1", "Choose CSV File",
-                                    multiple = FALSE,
-                                    accept = c("text/csv",
-                                               "text/comma-separated-values,text/plain",
-                                               ".csv")),
-                          
-                          # Horizontal line ----
-                          tags$hr(),
-                          
-                          # Input: Checkbox if file has header ----
-                          checkboxInput("EDA_header", "Header", TRUE),
-                          
-                          # Input: Select separator ----
-                          radioButtons("EDA_sep", "Separator",
-                                       choices = c(Comma = ",",
-                                                   Semicolon = ";",
-                                                   Tab = "\t"),
-                                       selected = ","),
-                          
-                          # Input: Select quotes ----
-                          radioButtons("EDA_quote", "Quote",
-                                       choices = c(None = "",
-                                                   "Double Quote" = '"',
-                                                   "Single Quote" = "'"),
-                                       selected = '"'),
-                          
-                          # Horizontal line ----
-                          tags$hr(),
-                          
-                          # Input: Select number of rows to display ----
-                          radioButtons("EDA_disp", "Display",
-                                       choices = c(Head = "head",
-                                                   All = "all"),
-                                       selected = "head"),
-                          
-                          numericInput(inputId = "EDA_obs",
-                                       label = "Number of observations to view:",
-                                       value = 10),
-                          
-                          actionButton("EDA_action", "Action", class = "btn-primary")
-                        ),
-                        
-                        # Main panel for displaying outputs ----
-                        mainPanel(
-                          tabsetPanel(
-                            tabPanel("View Data", # Output: Data file ----
-                                     h3("View Data"),
-                                     tableOutput("EDA_contents")),
-                            
-                            tabPanel("Summary Data", 
-                                     h3("Summary"),
-                                     
-                                     # Output: Verbatim text for data summary ----
-                                     verbatimTextOutput("EDA_summary"),
-                                     
-                                     # Output: HTML table with requested number of observations ----
-                                     tableOutput("EDA_view")
-                            ), 
-                            tabPanel("Table", 
-                                     h3("Todo... "),
-                                     tableOutput("table")
-                            )
+header <- dashboardHeader(title = "My Dashboard",
+                          titleWidth = 300,
+                          dropdownMenu(type = "messages",
+                                       messageItem(
+                                         from = "Sales Dept",
+                                         message = "Sales are steady this month."
+                                       ),
+                                       messageItem(
+                                         from = "New User",
+                                         message = "How do I register?",
+                                         icon = icon("question"),
+                                         time = "13:45"
+                                       ),
+                                       messageItem(
+                                         from = "Support",
+                                         message = "The new server is ready.",
+                                         icon = icon("life-ring"),
+                                         time = "2014-12-01"
+                                       )
+                          ),
+                          dropdownMenu(type = "tasks", badgeStatus = "success",
+                                       taskItem(value = 90, color = "green",
+                                                "Documentation"
+                                       ),
+                                       taskItem(value = 17, color = "aqua",
+                                                "Project X"
+                                       ),
+                                       taskItem(value = 75, color = "yellow",
+                                                "Server deployment"
+                                       ),
+                                       taskItem(value = 80, color = "red",
+                                                "Overall project"
+                                       )
                           )
-                        )
-                      )
+)
+
+sidebar <- dashboardSidebar(
+  width = 300,
+  sidebarMenu(
+    sidebarSearchForm(textId = "searchText", buttonId = "searchButton",
+                      label = "Search..."),
+    
+    ## prefix : menu_skc_pore_
+    menuItem("[SKC]Detect Pore", tabName = "menu_skc_pore_top", 
+             icon = icon("dashboard"),
+             menuItem('Training DL',
+                      tabName = 'menu_skc_pore_training_dl',
+                      icon = icon('line-chart')),
+             
+             ## prefix : menu_skc_pore_detect_
+             menuItem('Detect Result',
+                      tabName = 'menu_skc_pore_detect_result',
+                      icon = icon('line-chart')
+                      
              ),
              
-             ## --------------------------------------------------------------------##
-             ## Tab3 :: Text Mining ,  prefix - TM_
-             navbarMenu("Text Mining",
-                        tabPanel("Crawling Movie",
-                                 sidebarLayout(
-                                   sidebarPanel(
-                                     textInput("TM_txt_url", "Input URL:", "https://movie.daum.net/moviedb/grade?movieId=99611&type=netizen&page="),
-                                     
-                                     sliderInput("TM_crawling_page_slider", "Crawling Page:", 1, 500, 200),
-                                     
-                                     tags$h5("Deafult actionButton:"),
-                                     actionButton("TM_default_action", "Search"),
-                                     
-                                     tags$h5("Start Crawling:"),
-                                     actionButton("TM_start_action", "Crawling Action", class = "btn-primary")
-                                   ),
-                                   
-                                   mainPanel(
-                                     tabsetPanel(
-                                       tabPanel("Reviews", DT::dataTableOutput("TM_tbl_reviews")), 
-                                       tabPanel("Draw qgraph",  plotOutput("TM_qgraph")), 
-                                       tabPanel("Draw networkD3 ", forceNetworkOutput("TM_nw3d"))
-                                     )
-                                   )
-                                 )
-                        ),
-                        tabPanel("Crawling Facebook")
-             )
-  ))
+             dateInput('menu_skc_pore_input_month',
+                       label = paste('Search Month'),
+                       value = as.character(Sys.Date()),
+                       min = Sys.Date() - 100, max = Sys.Date() + 100,
+                       format = "yy/mm",
+                       startview = 'year', weekstart = 1
+             ),
+             actionButton(inputId = "menu_skc_pore_detect_btn", label = "Action", 
+                          icon("paper-plane"), 
+                          style="color: #fff; background-color: #337ab7; border-color: #2e6da4"),
+             menuItem('Detect Result',
+                      tabName = 'menu_skc_pore_detect_result_1',
+                      icon = icon('line-chart'),
+                      menuSubItem('l',
+                                  tabName = 'l',
+                                  icon = icon('line-chart')),
+                      menuSubItem('m',
+                                  tabName = 'm',
+                                  icon = icon('line-chart')))
+    ),
+    menuItem("Dashboard", tabName = "dashboard", icon = icon("dashboard")),
+    menuItem("Widgets", icon = icon("th"), tabName = "widgets",
+             badgeLabel = "new", badgeColor = "green"),
+    menuItem("Source code", icon = icon("file-code-o"), 
+             href = "https://github.com/rstudio/shinydashboard/"),
+    sidebarMenuOutput("menu"),
+    menuItemOutput("menuitem")
+  )
+)
 
+body <- dashboardBody(
+  tabItems(
+    tabItem(tabName = "menu_skc_pore_training_dl",
+            fluidRow(
+              # A static infoBox
+              infoBox("New Orders", 10 * 2, icon = icon("credit-card")),
+              # Dynamic infoBoxes
+              infoBoxOutput("progressBox"),
+              infoBoxOutput("approvalBox")
+            ),
+            
+            # infoBoxes with fill=TRUE
+            fluidRow(
+              infoBox("New Orders", 10 * 2, icon = icon("credit-card"), fill = TRUE),
+              infoBoxOutput("progressBox2"),
+              infoBoxOutput("approvalBox2")
+            )
+    ),
+    
+    tabItem(tabName = "menu_skc_pore_detect_result",
+            h2("menu_skc_pore_detect_result"),
+            hr(),
+            imageOutput("menu_skc_pore_detect_image")
+    )
+  )
+)
+
+dashboardPage(header, sidebar, body)
